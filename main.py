@@ -142,22 +142,25 @@ if __name__=="__main__":
     USER = args.user
     PWD = args.password
     TIMEOUT=args.timeout
-
-    offer_cache = Cache(PURGE)
+    SEND_EMAILS = MAILSRV and USER
 
     log.basicConfig(format=FORMAT)
     l = log.getLogger("default")
     l.setLevel(VERBOSITY)
-    
+
     l.info("Starting FlatFinder")
-    l.debug("Attempting GMail login")
-    try:
-        mailsrv = emailLogin(MAILSRV, USER, PWD)
-    except:
-        l.critical("GMail login failed. Exception occured: %s",
-                   sys.exc_info()[1])
-        sys.exit(1)
-    l.info("GMail login successful")
+
+    offer_cache = Cache(PURGE)
+
+    if SEND_EMAILS:
+        l.debug("Attempting GMail login")
+        try:
+            mailsrv = emailLogin(MAILSRV, USER, PWD)
+        except:
+            l.critical("GMail login failed. Exception occured: %s",
+                       sys.exc_info()[1])
+            sys.exit(1)
+        l.info("GMail login successful")
 
     try:
         while True:
@@ -170,13 +173,15 @@ if __name__=="__main__":
                     l.info("New offer discovered at %s", flat.link)
                     l.debug("Title: %s | Location: %s | Price: %s | Size: %s",
                             flat.title, flat.location, flat.price, flat.size)
-                    sendNotification(mailsrv, flat)
+                    if SEND_EMAILS:
+                        sendNotification(mailsrv, flat)
                     offer_cache.addOffer(flat)
                 
             time.sleep(TIMEOUT)
 
     except KeyboardInterrupt:
-        mailsrv.quit()
+        if SEND_EMAILS:
+            mailsrv.quit()
         offer_cache.flushCache()
         l.info("Quitting...")
         sys.exit(0)
