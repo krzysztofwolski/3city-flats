@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import logging as log
@@ -12,12 +13,13 @@ from email.mime.text import MIMEText
 FORMAT="%(asctime)-15s %(message)s"
 URL="http://ogloszenia.trojmiasto.pl/nieruchomosci-mam-do-wynajecia/wi,100,ai,_1800,e1i,38_35_3_34_36_87_5_2,ri,_2,na,1,has_hv,1,o0,0.html"
 MAILSRV="smtp.gmail.com:587"
-FROM="janfmusial@gmail.com"
-TO="janfmusial+flats@gmail.com"
-USER="janfmusial@gmail.com"
+FROM="janfmusial@gmail.comx"
+TO="janfmusial+flats@gmail.comx"
+USER="janfmusial@gmail.comx"
 TIMEOUT=60
 VERBOSITY=20
 CACHE="offers.dat"
+
 
 class Flat:
     def __init__(self, link, price="", size="", location="", title=""):
@@ -86,7 +88,7 @@ def parseLinks(url):
     html = response.read()
 
     soup = BeautifulSoup(html, "html.parser")
-    
+
     offers = []
 
     # find all offer headers
@@ -100,7 +102,8 @@ def parseLinks(url):
         location = body.find("li", class_="place").get_text()
         price = body.find("li", class_="price").get_text()
         size = body.find("li", class_="size").get_text()
-        offers.append(Flat(link=link, price=price, size=size, location=location, title=title))
+        offers.append(Flat(link=link, price=price, size=size,
+                           location=location, title=title))
 
     return offers
 
@@ -108,19 +111,27 @@ def sendNotification(server, flat):
     msg = MIMEText(flat.link)
     msg['From'] = FROM
     msg['To'] = TO
-    msg['Subject'] = "{} {} | {} {}".format(flat.location, flat.price, flat.size, flat.title)
+    msg['Subject'] = "{} {} | {} {}".format(flat.location, flat.price,
+                                            flat.size, flat.title)
     server.send_message(msg)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--verbosity", default=20, help="logging verbosity", type=int)
-    parser.add_argument("-d", "--purge", action="store_true", help="purge cache") 
-    parser.add_argument("-f", "--sender", default=FROM, help="sender address", type=str)
+    parser.add_argument("-v", "--verbosity", default=20,
+                        help="logging verbosity", type=int)
+    parser.add_argument("-d", "--purge", action="store_true",
+                        help="purge cache")
+    parser.add_argument("-f", "--sender", default=FROM, help="sender address",
+                        type=str)
     parser.add_argument("-t", "--to", default=TO, help="to address", type=str)
-    parser.add_argument("-x", "--timeout", default=TIMEOUT, help="polling interval", type=int)
-    parser.add_argument("-s", "--mailserver", default=MAILSRV, help="mail server address:port", type=str)
-    parser.add_argument("-u", "--user", help="mail server user", required=True, type=str)
-    parser.add_argument("-p", "--password", help="mail server password", required=True, type=str)
+    parser.add_argument("-x", "--timeout", default=TIMEOUT,
+                        help="polling interval", type=int)
+    parser.add_argument("-s", "--mailserver", default=MAILSRV, 
+                        help="mail server address:port", type=str)
+    parser.add_argument("-u", "--user", help="mail server user",
+                        default=False, type=str)
+    parser.add_argument("-p", "--password", help="mail server password",
+                        default=False, type=str)
     args = parser.parse_args()
 
     VERBOSITY = args.verbosity
@@ -143,7 +154,8 @@ if __name__=="__main__":
     try:
         mailsrv = emailLogin(MAILSRV, USER, PWD)
     except:
-        l.critical("GMail login failed. Exception occured: %s", sys.exc_info()[1])
+        l.critical("GMail login failed. Exception occured: %s",
+                   sys.exc_info()[1])
         sys.exit(1)
     l.info("GMail login successful")
 
@@ -156,7 +168,8 @@ if __name__=="__main__":
             for flat in flats:
                 if not offer_cache.offerExists(flat):
                     l.info("New offer discovered at %s", flat.link)
-                    l.debug("Title: %s | Location: %s | Price: %s | Size: %s", flat.title, flat.location, flat.price, flat.size)
+                    l.debug("Title: %s | Location: %s | Price: %s | Size: %s",
+                            flat.title, flat.location, flat.price, flat.size)
                     sendNotification(mailsrv, flat)
                     offer_cache.addOffer(flat)
                 
@@ -167,5 +180,3 @@ if __name__=="__main__":
         offer_cache.flushCache()
         l.info("Quitting...")
         sys.exit(0)
-
-
